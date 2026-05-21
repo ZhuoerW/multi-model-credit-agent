@@ -70,6 +70,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_INPUT  = os.path.join(_HERE, "..", "data", "raw", "complaints_with_topics.csv")
 DEFAULT_OUTPUT      = os.path.join(_HERE, "..", "outputs", "models", "xgboost_relief_classifier_with_topics.joblib")
 DEFAULT_OUTPUT_TEXT = os.path.join(_HERE, "..", "outputs", "models", "xgboost_relief_classifier_text_only.joblib")
+DEFAULT_OUTPUT_FULL = os.path.join(_HERE, "..", "outputs", "models", "xgboost_relief_classifier_full.joblib")
 
 # ── columns ───────────────────────────────────────────────────────────────────
 TEXT_COL             = "Consumer complaint narrative"
@@ -77,6 +78,7 @@ RESPONSE_COL         = "Company response to consumer"
 
 TEXT_FEATURE     = "clean_text"
 CAT_FEATURES     = ["primary_topic"]
+EXTRA_CAT_FEATURES = ["State", "Company"]   # added in variant C
 
 # ── label definition ──────────────────────────────────────────────────────────
 RELIEF_RESPONSE = "Closed with monetary relief"
@@ -135,10 +137,10 @@ def load_and_prepare(csv_path: str) -> pd.DataFrame:
     # Clean narrative text
     df[TEXT_FEATURE] = df[TEXT_COL].apply(clean_text)
 
-    # Cast primary_topic to str for OHE; fill any missing topic values
-    for col in CAT_FEATURES:
+    # Cast categorical columns to str for OHE; fill missing values
+    for col in CAT_FEATURES + EXTRA_CAT_FEATURES:
         df[col] = df[col].fillna("Unknown").astype(str)
-    return df[[TEXT_FEATURE] + CAT_FEATURES + ["label"]]
+    return df[[TEXT_FEATURE] + CAT_FEATURES + EXTRA_CAT_FEATURES + ["label"]]
 
 
 # ── model pipeline ────────────────────────────────────────────────────────────
@@ -149,14 +151,14 @@ def build_pipeline(
     learning_rate: float,
     scale_pos_weight: float,
     random_state: int,
-    use_topics: bool = True,
+    cat_features: list = None,
 ) -> Pipeline:
     """
-    Both variants take the same DataFrame as input; ColumnTransformer selects
+    All variants take the same DataFrame as input; ColumnTransformer selects
     only the columns it needs via remainder="drop".
 
-    use_topics=True  → TF-IDF + OHE(primary_topic)
-    use_topics=False → TF-IDF only (ablation baseline)
+    cat_features=None       → TF-IDF only (text baseline)
+    cat_features=[...]      → TF-IDF + OHE over the given categorical columns
 
     All outputs are kept sparse so XGBoost hist can handle 30K+ features
     without densifying the matrix.
@@ -175,12 +177,12 @@ def build_pipeline(
             TEXT_FEATURE,
         ),
     ]
-    if use_topics:
+    if cat_features:
         transformers += [
             (
                 "cat",
                 OneHotEncoder(handle_unknown="ignore", sparse_output=True),
-                CAT_FEATURES,
+                cat_features,
             ),
         ]
 
@@ -277,34 +279,37 @@ def evaluate_pipeline(
     }
 
 
-def print_comparison(r_text: dict, r_topics: dict, n_relief_test: int) -> None:
-    """Side-by-side metric table: text-only vs text+topics."""
-    w = 56
+def print_comparison(r_text: dict, r_topics: dict, r_full: dict, n_relief_test: int) -> None:
+    """Side-by-side metric table: text-only vs +topics vs +topics+state+company."""
+    w = 72
     print("\n" + "═" * w)
-    print(f"  {'Metric':<24} {'Text only':>10} {'+ Topics':>10} {'Δ':>8}")
+    print(f"  {'Metric':<24} {'Text only':>10} {'+ Topics':>10} {'+ St/Co':>10} {'Δ(B→C)':>8}")
     print("═" * w)
     rows = [
-        ("AUC-ROC",                 "auc_roc"),
-        ("Avg Precision",           "avg_precision"),
-        (f"Precision @ target R",   "precision"),
-        ("Recall (actual)",         "recall"),
-        ("F1",                      "f1"),
+        ("AUC-ROC",               "auc_roc"),
+        ("Avg Precision",         "avg_precision"),
+        ("Precision @ target R",  "precision"),
+        ("Recall (actual)",       "recall"),
+        ("F1",                    "f1"),
     ]
     for name, key in rows:
         v_text   = r_text[key]
         v_topics = r_topics[key]
-        delta    = v_topics - v_text
+        v_full   = r_full[key]
+        delta    = v_full - v_topics
         sign     = "+" if delta >= 0 else ""
-        print(f"  {name:<24} {v_text:>10.4f} {v_topics:>10.4f} {sign}{delta:>7.4f}")
-    print(f"  {'Chosen threshold':<24} {r_text['threshold']:>10.4f} {r_topics['threshold']:>10.4f}")
+        print(f"  {name:<24} {v_text:>10.4f} {v_topics:>10.4f} {v_full:>10.4f} {sign}{delta:>7.4f}")
+    print(f"  {'Chosen threshold':<24} {r_text['threshold']:>10.4f} "
+          f"{r_topics['threshold']:>10.4f} {r_full['threshold']:>10.4f}")
 
-    # Relief caught at chosen threshold
     caught_text   = int(r_text["recall"]   * n_relief_test)
     caught_topics = int(r_topics["recall"] * n_relief_test)
-    print(f"  {'Relief caught':<24} {caught_text:>9}/{n_relief_test} {caught_topics:>9}/{n_relief_test}")
+    caught_full   = int(r_full["recall"]   * n_relief_test)
+    print(f"  {'Relief caught':<24} {caught_text:>9}/{n_relief_test} "
+          f"{caught_topics:>9}/{n_relief_test} {caught_full:>9}/{n_relief_test}")
     print("═" * w)
-    winner = "+ Topics" if r_topics["auc_roc"] >= r_text["auc_roc"] else "Text only"
-    print(f"  Best model by AUC-ROC: {winner}")
+    best = max([r_text, r_topics, r_full], key=lambda r: r["auc_roc"])
+    print(f"  Best model by AUC-ROC: {best['label']}")
     print("═" * w)
 
 
@@ -375,24 +380,31 @@ def main(args: argparse.Namespace) -> None:
 
     # ── variant A: text only ──────────────────────────────────────────────────
     with timer("Training  [A] Text only  (TF-IDF → XGBoost)"):
-        pipe_text = build_pipeline(**pipeline_kw, use_topics=False)
+        pipe_text = build_pipeline(**pipeline_kw, cat_features=None)
         pipe_text.fit(X_train, y_train)
 
     # ── variant B: text + topics ──────────────────────────────────────────────
-    with timer("Training  [B] Text + topics  (TF-IDF + topic OHE/num → XGBoost)"):
-        pipe_topics = build_pipeline(**pipeline_kw, use_topics=True)
+    with timer("Training  [B] Text + topics  (TF-IDF + OHE(primary_topic) → XGBoost)"):
+        pipe_topics = build_pipeline(**pipeline_kw, cat_features=CAT_FEATURES)
         pipe_topics.fit(X_train, y_train)
 
-    # ── evaluate both ─────────────────────────────────────────────────────────
+    # ── variant C: text + topics + state + company ────────────────────────────
+    with timer("Training  [C] Text + topics + state + company"):
+        pipe_full = build_pipeline(**pipeline_kw, cat_features=CAT_FEATURES + EXTRA_CAT_FEATURES)
+        pipe_full.fit(X_train, y_train)
+
+    # ── evaluate all variants ─────────────────────────────────────────────────
     n_relief_test = int(y_test.sum())
     target_recall = args.target_recall
 
-    with timer("Evaluating both variants"):
+    with timer("Evaluating all variants"):
         r_text   = evaluate_pipeline(pipe_text,   X_val, y_val, X_test, y_test, target_recall, "Text only")
         r_topics = evaluate_pipeline(pipe_topics, X_val, y_val, X_test, y_test, target_recall, "Text + topics")
+        r_full   = evaluate_pipeline(pipe_full,   X_val, y_val, X_test, y_test, target_recall,
+                                     "Text + topics + state + company")
 
     # ── per-variant detailed output ───────────────────────────────────────────
-    for r, pipe in [(r_text, pipe_text), (r_topics, pipe_topics)]:
+    for r, pipe in [(r_text, pipe_text), (r_topics, pipe_topics), (r_full, pipe_full)]:
         thr = r["threshold"]
         print(f"\n{'━'*60}")
         print(f"  {r['label']}  (threshold = {thr:.4f}, target recall ≥ {target_recall:.0%})")
@@ -432,17 +444,20 @@ def main(args: argparse.Namespace) -> None:
                       f"{prec_v[i_v]:>10.4f} {caught:>8}/{n_relief_test}{marker}")
 
     # ── side-by-side comparison ───────────────────────────────────────────────
-    print_comparison(r_text, r_topics, n_relief_test)
+    print_comparison(r_text, r_topics, r_full, n_relief_test)
 
-    # ── save both models ──────────────────────────────────────────────────────
+    # ── save all three models ─────────────────────────────────────────────────
     with timer("Saving models"):
         os.makedirs(os.path.dirname(os.path.abspath(args.output_model)), exist_ok=True)
         joblib.dump({"pipeline": pipe_topics, "threshold": r_topics["threshold"]},
                     args.output_model)
         joblib.dump({"pipeline": pipe_text,   "threshold": r_text["threshold"]},
                     args.output_model_text)
-    print(f"    Saved (topics)    → {args.output_model}")
-    print(f"    Saved (text only) → {args.output_model_text}")
+        joblib.dump({"pipeline": pipe_full,   "threshold": r_full["threshold"]},
+                    args.output_model_full)
+    print(f"    Saved (topics)         → {args.output_model}")
+    print(f"    Saved (text only)      → {args.output_model_text}")
+    print(f"    Saved (full: +st/co)   → {args.output_model_full}")
 
     print(f"\nTotal time: {time.time() - t_start:.1f}s")
 
@@ -454,6 +469,8 @@ if __name__ == "__main__":
                         help="Path for text+topics model artifact")
     parser.add_argument("--output_model_text",  default=DEFAULT_OUTPUT_TEXT,
                         help="Path for text-only model artifact")
+    parser.add_argument("--output_model_full",  default=DEFAULT_OUTPUT_FULL,
+                        help="Path for text+topics+state+company model artifact")
     parser.add_argument("--test_size",          type=float, default=0.2)
     parser.add_argument("--val_size",           type=float, default=0.2,
                         help="Validation fraction of total data (default 0.2); "
@@ -461,13 +478,13 @@ if __name__ == "__main__":
     parser.add_argument("--random_state",       type=int,   default=42)
     parser.add_argument("--n_estimators",       type=int,   default=500,
                         help="Number of boosting rounds")
-    parser.add_argument("--max_depth",          type=int,   default=4,
+    parser.add_argument("--max_depth",          type=int,   default=6,
                         help="Maximum tree depth")
     parser.add_argument("--learning_rate",      type=float, default=0.05,
                         help="Boosting learning rate (eta)")
     parser.add_argument("--scale_pos_weight",   type=float, default=-1,
                         help="Class weight for positives (<=0 = auto from training set)")
-    parser.add_argument("--spw_multiplier",     type=float, default=1.0,
+    parser.add_argument("--spw_multiplier",     type=float, default=1.5,
                         help="Multiply auto scale_pos_weight by this factor to boost recall "
                              "(ignored when --scale_pos_weight is set manually)")
     parser.add_argument("--undersample_ratio",  type=float, default=0,
