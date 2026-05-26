@@ -1,0 +1,201 @@
+feature,importance,rank
+"geo_cat__Company_BANK OF AMERICA, NATIONAL ASSOCIATION",0.101203844,1
+"geo_cat__Company_CITIBANK, N.A.",0.024934817,2
+geo_cat__Company_Chime Financial Inc,0.024723724,3
+topic_cat__company_primary_topic_9.0,0.022977173,4
+num__max_dollar_amount,0.022824556,5
+"geo_cat__Company_Block, Inc.",0.021650502,6
+geo_cat__Company_TD BANK US HOLDING COMPANY,0.0159993,7
+geo_cat__Company_JPMORGAN CHASE & CO.,0.015912946,8
+topic_cat__company_primary_topic_Unknown,0.015625827,9
+geo_cat__Company_CAPITAL ONE FINANCIAL CORPORATION,0.014678765,10
+"geo_cat__Company_HUNTINGTON NATIONAL BANK, THE",0.013879812,11
+num__dollar_amount_count,0.013653296,12
+geo_cat__Company_UNITED SERVICES AUTOMOBILE ASSOCIATION,0.0121500455,13
+topic_cat__issue_primary_topic_7.0,0.011290267,14
+geo_cat__Company_TRUIST FINANCIAL CORPORATION,0.010691928,15
+"geo_cat__Company_CITIZENS FINANCIAL GROUP, INC.",0.010456899,16
+topic_cat__company_primary_topic_2.0,0.010207521,17
+geo_cat__Company_PNC Bank N.A.,0.009912616,18
+geo_cat__Company_ROBINHOOD MARKETS INC.,0.00981545,19
+geo_cat__Company_Netspend Corporation,0.00964156,20
+geo_cat__Company_HSBC NORTH AMERICA HOLDINGS INC.,0.00898987,21
+"geo_cat__Company_SANTANDER BANK, NATIONAL ASSOCIATION",0.0087684505,22
+geo_cat__Company_BB&T CORPORATION,0.008716132,23
+geo_cat__Company_ALLY FINANCIAL INC.,0.007904943,24
+"geo_cat__Company_SOFI TECHNOLOGIES, INC.",0.007903159,25
+topic_cat__company_primary_topic_4.0,0.0076015494,26
+geo_cat__Company_Comerica,0.00737053,27
+"geo_cat__Company_Early Warning Services, LLC",0.0073117334,28
+topic_cat__company_primary_topic_7.0,0.007216315,29
+geo_cat__Company_REGIONS FINANCIAL CORPORATION,0.007174339,30
+"geo_cat__Company_AXOS FINANCIAL, INC.",0.0067790565,31
+topic_cat__issue_primary_topic_2.0,0.0066984044,32
+geo_cat__Company_WELLS FARGO & COMPANY,0.0065840227,33
+"geo_cat__Company_Fidelity National Information Services, Inc. (FNIS)",0.006540582,34
+topic_cat__company_primary_topic_1.0,0.0062013324,35
+geo_cat__Company_U.S. BANCORP,0.0061330437,36
+geo_cat__Company_GOLDMAN SACHS BANK USA,0.006104595,37
+geo_cat__Company_Albert Corporation,0.0060442267,38
+topic_cat__company_primary_topic_6.0,0.0060334937,39
+"geo_cat__Company_SANTANDER HOLDINGS USA, INC.",0.005765422,40
+topic_cat__company_primary_topic_3.0,0.005757806,41
+geo_cat__Company_BBVA FINANCIAL CORPORATION,0.0057388693,42
+num__legal_count,0.0057002488,43
+num__refund_count,0.005611056,44
+geo_cat__Company_TCF NATIONAL BANK,0.0055926354,45
+geo_cat__Company_FIFTH THIRD FINANCIAL CORPORATION,0.005487824,46
+"geo_cat__Company_FIRST CITIZENS BANCSHARES, INC.",0.005211549,47
+topic_cat__issue_primary_topic_Unknown,0.005145731,48
+geo_cat__Company_M&T BANK CORPORATION,0.004895311,49
+geo_cat__Company_FIRST NATIONAL BANK OF PENNSYLVANIA,0.004888833,50
+topic_cat__issue_primary_topic_6.0,0.004872188,51
+num__duration_mention_count,0.0048648794,52
+topic_cat__issue_primary_topic_1.0,0.004695895,53
+geo_cat__Company_NAVY FEDERAL CREDIT UNION,0.004459914,54
+"geo_cat__Company_Credit Karma, LLC",0.004436138,55
+"geo_cat__Company_OPTUM BANK, INC.",0.00440127,56
+geo_cat__Company_AMERICAN EXPRESS COMPANY,0.0042334744,57
+geo_cat__Company_BANK OF HAWAII CORPORATION,0.0041397647,58
+geo_cat__Company_BANK OF THE WEST,0.004071508,59
+geo_cat__Company_MoneyLion Inc.,0.003976409,60
+num__char_len,0.003915943,61
+"geo_cat__Company_Coinbase, Inc.",0.0038437333,62
+num__police_fraud_count,0.0038417021,63
+geo_cat__Company_DISCOVER BANK,0.0038366853,64
+topic_cat__company_primary_topic_5.0,0.0038347521,65
+topic_cat__issue_primary_topic_9.0,0.003828723,66
+geo_cat__State_MA,0.0037825352,67
+"geo_cat__Company_ARVEST BANK GROUP, INC.",0.0037720294,68
+topic_cat__issue_primary_topic_3.0,0.0037361041,69
+"geo_cat__Company_Paypal Holdings, Inc",0.0036741858,70
+geo_cat__State_OK,0.0036354847,71
+topic_cat__company_primary_topic_8.0,0.0035980842,72
+geo_cat__Company_AMERICA FIRST FEDERAL CREDIT UNION,0.0035379985,73
+"geo_cat__Company_Bread Financial Holdings, Inc.",0.0035031687,74
+geo_cat__Company_Payfare International Inc.,0.0035009484,75
+geo_cat__Company_ZIONS BANCORPORATION,0.0034893632,76
+geo_cat__Company_ADP Inc.,0.0034888305,77
+geo_cat__Company_NEW YORK COMMUNITY BANCORP INC,0.003454394,78
+geo_cat__State_WI,0.0033791044,79
+geo_cat__Company_STATE EMPLOYEES CREDIT UNION,0.0033179533,80
+geo_cat__Company_SYNCHRONY FINANCIAL,0.0032866213,81
+topic_cat__issue_primary_topic_4.0,0.0032507917,82
+"geo_cat__Company_Social Finance, Inc.",0.003227646,83
+geo_cat__Company_KEYCORP,0.0032255664,84
+topic_cat__issue_primary_topic_8.0,0.0032154233,85
+"geo_cat__Company_EVERBANK, NATIONAL ASSOCIATION",0.0031702386,86
+"geo_cat__Company_PEOPLE'S UNITED BANK, NATIONAL ASSOCIATION",0.0031344262,87
+geo_cat__Company_AMERIS BANCORP,0.003073725,88
+geo_cat__State_IN,0.0030655663,89
+num__regulatory_count,0.0030596524,90
+geo_cat__State_KY,0.0030250272,91
+geo_cat__Company_MORGAN STANLEY & CO. LLC,0.0030239571,92
+num__total_dollar_amount,0.0030115356,93
+geo_cat__State_PR,0.00294139,94
+num__urgency_count,0.002930958,95
+"geo_cat__Company_PROSPERITY BANCSHARES, INC.",0.0029288095,96
+num__account_ref_count,0.0029278572,97
+geo_cat__Company_BANCO POPULAR DE PUERTO RICO,0.0028202415,98
+geo_cat__Company_FIRSTBANK PUERTO RICO,0.0028127271,99
+num__sentence_count,0.0028049273,100
+geo_cat__Company_FinCo Services Inc DBA Current,0.0027955712,101
+topic_cat__issue_primary_topic_0.0,0.0027766577,102
+geo_cat__State_OH,0.0027755424,103
+"geo_cat__Company_Dave Operating, LLC",0.0027615996,104
+geo_cat__Company_FISERV FINXACT CORE,0.0027232177,105
+geo_cat__State_OR,0.0026960266,106
+geo_cat__Company_PENTAGON FEDERAL CREDIT UNION,0.0026557501,107
+"geo_cat__Company_SUNTRUST BANKS, INC.",0.002644473,108
+geo_cat__State_IA,0.0026067188,109
+geo_cat__State_MD,0.0026011113,110
+geo_cat__Company_EAST WEST BANK,0.00257659,111
+"geo_cat__Company_UPGRADE, INC.",0.002570427,112
+geo_cat__State_ID,0.002567818,113
+topic_cat__company_primary_topic_0.0,0.0025354666,114
+geo_cat__State_SC,0.0025198867,115
+geo_cat__State_MS,0.0025119241,116
+"geo_cat__Company_FIRST MIDWEST BANCORP, INC.",0.0025034063,117
+geo_cat__Company_SUNCOAST CREDIT UNION,0.0024974402,118
+geo_cat__Company_BARCLAYS BANK DELAWARE,0.0024960055,119
+geo_cat__Company_BMO BANK NATIONAL ASSOCIATION,0.0024938812,120
+geo_cat__State_AL,0.0024630523,121
+geo_cat__Company_BOK FINANCIAL CORP,0.0024429795,122
+"geo_cat__Company_Affirm Holdings, Inc",0.002433048,123
+geo_cat__Company_Indie Technology DBA Found,0.0023979729,124
+geo_cat__State_NJ,0.0023948292,125
+geo_cat__Company_CapitalJ Inc. dba Juno,0.002389608,126
+geo_cat__State_MI,0.0023634117,127
+geo_cat__Company_UMB FINANCIAL CORPORATION,0.0023592634,128
+geo_cat__State_UT,0.0023487494,129
+geo_cat__State_RI,0.0023290848,130
+num__paragraph_count,0.002296841,131
+geo_cat__State_NM,0.0022915937,132
+num__question_mark_count,0.0022863117,133
+num__caps_ratio,0.002281221,134
+geo_cat__Company_OLD NATIONAL BANCORP,0.0022628375,135
+geo_cat__State_CO,0.0022412795,136
+num__flesch_kincaid,0.0022404226,137
+geo_cat__State_AE,0.0022076508,138
+num__exclamation_count,0.002195639,139
+geo_cat__Company_HANCOCK WHITNEY BANK,0.002174318,140
+geo_cat__State_MO,0.0021635073,141
+num__negative_emotion_count,0.0021621247,142
+num__avg_word_len,0.0021539456,143
+"geo_cat__Company_BANKMOBILE TECHNOLOGIES, INC",0.0021506557,144
+geo_cat__Company_SIMMONS FIRST NATIONAL CORPORATION,0.0021502443,145
+"geo_cat__Company_FIRST HAWAIIAN, INC.",0.002144915,146
+num__avg_sentence_len,0.0021399998,147
+num__contact_attempt_count,0.0021391,148
+num__quoted_speech_count,0.0021124447,149
+num__lexical_diversity,0.0021076987,150
+geo_cat__Company_Conduent Incorporated,0.002107111,151
+geo_cat__Company_BANK OZK,0.002097626,152
+"geo_cat__Company_Flagstar Bank, N.A.",0.0020936225,153
+geo_cat__Company_MUFG AMERICAS HOLDINGS CORPORATION,0.002088786,154
+"geo_cat__Company_CENTRAL BANCOMPANY, INC",0.00208147,155
+geo_cat__Company_WSFS FINANCIAL CORPORATION,0.0020736265,156
+geo_cat__State_NC,0.002063789,157
+geo_cat__State_LA,0.0020194417,158
+geo_cat__Company_NBT BANCORP INC.,0.002014815,159
+num__word_count,0.0019632361,160
+geo_cat__Company_First Technology Federal Credit Union,0.00195228,161
+geo_cat__State_VA,0.0019388242,162
+"geo_cat__Company_FIRST INTERSTATE BANCSYSTEM, INC.",0.0019374588,163
+geo_cat__Company_Google Compare Credit Cards Inc.,0.001916795,164
+"geo_cat__Company_WESBANCO BANK, INC.",0.0018949362,165
+"geo_cat__Company_APPLE FINANCIAL HOLDINGS, INC.",0.0018746412,166
+num__escalation_person_count,0.0018668283,167
+geo_cat__Company_Synovus Bank,0.0018548046,168
+"geo_cat__Company_TEXAS CAPITAL BANCSHARES, INC.",0.0018269011,169
+geo_cat__Company_N26 Inc.,0.0018051554,170
+num__date_count,0.0018037877,171
+geo_cat__Company_E*TRADE BANK,0.0017935294,172
+geo_cat__State_Unknown,0.0017690304,173
+geo_cat__State_CT,0.0017688691,174
+geo_cat__State_NY,0.0017629262,175
+geo_cat__Company_U.S. BANK NATIONAL ASSOCIATION - SAN FRANCISCO MAIN BRANCH,0.0017391887,176
+geo_cat__State_AZ,0.0017381529,177
+geo_cat__Company_FIRSTBANK,0.001737056,178
+geo_cat__Company_GLOBAL CREDIT UNION,0.0017366204,179
+geo_cat__State_AR,0.0017191806,180
+geo_cat__State_GA,0.0016889769,181
+geo_cat__State_WA,0.0016471541,182
+geo_cat__Company_FourLeaf Federal Credit Union,0.00162869,183
+geo_cat__State_WY,0.0016074642,184
+geo_cat__Company_Bright Capital Inc,0.0015924632,185
+"geo_cat__Company_Atlantic Union Bankshares, Inc.",0.0015876268,186
+"geo_cat__Company_Branch Messenger, Inc.",0.0015705061,187
+geo_cat__Company_M1 Holdings Inc.,0.0015601378,188
+geo_cat__Company_BUSEY BANK,0.0015557688,189
+geo_cat__State_DE,0.0015399596,190
+geo_cat__Company_STERLING BANCORP,0.001528131,191
+geo_cat__Company_OCEANFIRST FINANCIAL CORP.,0.0015219047,192
+geo_cat__Company_FIRST FINANCIAL BANCORP,0.0015131371,193
+geo_cat__State_PA,0.0015060343,194
+geo_cat__State_NV,0.0015045133,195
+"geo_cat__Company_Skrill USA, Inc.",0.0014944156,196
+"geo_cat__Company_BREMER BANK, NATIONAL ASSOCIATION",0.0014912701,197
+geo_cat__State_IL,0.0014860316,198
+geo_cat__Company_BEACON FINANCIAL CORPORATION,0.0014850685,199
+geo_cat__State_KS,0.0014817064,200
