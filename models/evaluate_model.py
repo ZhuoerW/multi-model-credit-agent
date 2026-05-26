@@ -24,6 +24,21 @@ import re
 import joblib
 import numpy as np
 import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
+
+
+class IndexMaskSelector(BaseEstimator, TransformerMixin):
+    """Needed to deserialize models saved by 05_xgboost_structured_features.py."""
+    def __init__(self, mask):
+        self.mask = mask
+    def fit(self, X, y=None):
+        return self
+    def transform(self, X):
+        import scipy.sparse as sp
+        col_idx = np.where(self.mask)[0]
+        return X[:, col_idx] if sp.issparse(X) else X[:, self.mask]
+    def get_support(self):
+        return self.mask
 from sklearn.metrics import (
     average_precision_score,
     confusion_matrix,
@@ -34,7 +49,6 @@ from sklearn.metrics import (
     roc_auc_score,
     roc_curve,
 )
-from sklearn.model_selection import train_test_split
 
 
 # ── paths ─────────────────────────────────────────────────────────────────────
@@ -71,24 +85,57 @@ _RE_BOILERPLATE = re.compile(
 )
 
 
+_RE_DOLLAR_ANY = re.compile(r"\{\$[\d,]+\.?\d*\}|\$[\d,]+\.?\d*")
+_RE_SENTENCE   = re.compile(r"[.!?]+")
+_RE_VOWEL      = re.compile(r"[aeiouy]+")
+
+
 def clean_text(text: str) -> str:
     text = str(text).lower()
     text = _RE_BOILERPLATE.sub(" ", text)
     text = _RE_REDACTION.sub(" ", text)
-    text = _RE_DIGITS.sub(" ", text)
+    text = _RE_DOLLAR_ANY.sub(" dollar_amount ", text)
     text = _RE_PUNCT.sub(" ", text)
     text = _RE_WHITESPACE.sub(" ", text).strip()
     return text
+
+
+# ── narrative feature helpers (match 05_xgboost_structured_features.py) ───────
+
+def _extract_dollar_amounts(text):
+    amounts = []
+    for m in re.findall(r'\$[\d,]+(?:\.\d+)?', str(text)):
+        try:
+            amounts.append(float(m.replace('$', '').replace(',', '')))
+        except ValueError:
+            pass
+    return amounts
+
+def _count_syllables(word):
+    word = word.lower().strip(".,!?;:'\"()-")
+    if not word:
+        return 0
+    count = len(_RE_VOWEL.findall(word))
+    if word.endswith('e') and count > 1:
+        count -= 1
+    return max(1, count)
+
+def _flesch(text):
+    words = str(text).split()
+    if not words:
+        return np.nan
+    sentences = max(1, len(re.findall(r'[.!?]+', text)))
+    syllables = sum(_count_syllables(w) for w in words)
+    return 206.835 - 1.015 * (len(words) / sentences) - 84.6 * (syllables / len(words))
 
 
 # ── data loading ──────────────────────────────────────────────────────────────
 
 def load_and_prepare(csv_path: str) -> pd.DataFrame:
     """
-    Replicates the preprocessing from the training scripts.
-    Returns a wide DataFrame: model feature columns + META_COLS + label.
-    The pipeline's ColumnTransformer will select only the columns it needs
-    via remainder="drop", so extra metadata columns are harmless.
+    Computes all possible features so any saved model can be evaluated.
+    The pipeline's ColumnTransformer(remainder='drop') ignores columns it
+    wasn't trained on, so extra columns are harmless.
     """
     print(f"Loading: {csv_path}")
     df = pd.read_csv(csv_path, low_memory=False)
@@ -105,26 +152,52 @@ def load_and_prepare(csv_path: str) -> pd.DataFrame:
     print(f"  After deduplication    : {len(df):,}")
 
     df["label"] = (df[RESPONSE_COL] == RELIEF_RESPONSE).astype(int)
-    df[TEXT_FEATURE] = df[TEXT_COL].apply(clean_text)
+    df["date"]  = pd.to_datetime(df["Date received"], errors="coerce")
 
-    if "primary_topic" in df.columns:
-        df["primary_topic"] = df["primary_topic"].fillna("Unknown").astype(str)
-    if "topic_confidence" in df.columns:
-        df["topic_confidence"] = df["topic_confidence"].fillna(0.0)
+    # ── narrative numeric features (for structured model) ─────────────────────
+    raw = df[TEXT_COL]
+    dollar_series             = raw.apply(_extract_dollar_amounts)
+    df["dollar_amount_count"] = dollar_series.apply(len).astype(float)
+    df["max_dollar_amount"]   = dollar_series.apply(lambda x: max(x) if x else 0.0).astype(float)
+    df["total_dollar_amount"] = dollar_series.apply(lambda x: float(sum(x)) if x else 0.0)
+    df["sentence_count"]      = raw.apply(lambda t: max(len([s for s in _RE_SENTENCE.split(str(t)) if s.strip()]), 1)).astype(float)
+    df["flesch_kincaid"]      = raw.apply(_flesch).astype(float)
+    df["lexical_diversity"]   = raw.apply(lambda t: len(set(t.lower().split())) / len(t.split()) if t.split() else 0.0).astype(float)
+    df["char_len"]            = raw.str.len().astype(float)
+    df["date_count"]          = raw.str.count(r'\b(?:XX|\d{1,2})/(?:XX|\d{1,2})/(?:XX|\d{2,4})\b').astype(float)
+    df["caps_ratio"]          = raw.apply(lambda t: sum(1 for w in t.split() if w.isupper() and len(w) > 1) / max(len(t.split()), 1)).astype(float)
+    df["avg_word_len"]        = raw.apply(lambda t: float(np.mean([len(w) for w in t.split()])) if t.split() else 0.0).astype(float)
+    df["exclamation_count"]   = raw.str.count(r'!').astype(float)
+    df["account_ref_count"]   = raw.str.count(r'\bX{4,}\b|\b\d{4,}\b').astype(float)
+    df["duration_mention_count"]  = raw.str.count(r'\b(?:month|months|week|weeks|year|years|day|days)\b', flags=re.IGNORECASE).astype(float)
+    df["contact_attempt_count"]   = raw.str.count(r'\b(?:called|emailed|email|spoke with|spoken with|visited|wrote|contacted|reached out|called back|speaking with)\b', flags=re.IGNORECASE).astype(float)
+    df["escalation_person_count"] = raw.str.count(r'\b(?:representative|manager|supervisor|agent|customer service|customer care|specialist|officer)\b', flags=re.IGNORECASE).astype(float)
+    df["refund_count"]        = raw.str.count(r'\b(?:refund|reimburse|reimbursement|compensate|compensation|credit back|pay back|pay me back|money back)\b', flags=re.IGNORECASE).astype(float)
+    df["regulatory_count"]    = raw.str.count(r'\b(?:CFPB|FTC|BBB|attorney general|consumer protection|OCC|FDIC|federal reserve)\b', flags=re.IGNORECASE).astype(float)
+    df["urgency_count"]       = raw.str.count(r'\b(?:immediately|urgent|urgently|asap|right away|as soon as possible|promptly|right now)\b', flags=re.IGNORECASE).astype(float)
+    df["paragraph_count"]     = (raw.str.count(r'\n\s*\n') + 1).astype(float)
+    df["police_fraud_count"]  = raw.str.count(r'\b(?:police|filed a report|identity theft|fraud|fraudulent|stolen|theft)\b', flags=re.IGNORECASE).astype(float)
+    df["quoted_speech_count"] = raw.str.count(r'"[^"]{3,}"').astype(float)
+    df["question_mark_count"] = raw.str.count(r'\?').astype(float)
+    df["negative_emotion_count"] = raw.str.count(r'\b(?:frustrated|frustrating|frustration|angry|anger|upset|disappointed|disappointment|shocked|outraged|furious|disgusted|distressed)\b', flags=re.IGNORECASE).astype(float)
+    df["legal_count"]         = raw.str.count(r'\b(?:lawyer|attorney|sue|suing|lawsuit|court|legal action|arbitration)\b', flags=re.IGNORECASE).astype(float)
 
-    # Categorical features used by some models
-    for col in ["Product", "Sub-product", "Issue", "Sub-issue", "State", "Tags"]:
+    df[TEXT_FEATURE] = raw.apply(clean_text)
+    df["word_count"]      = df[TEXT_FEATURE].str.split().str.len().astype(float)
+    df["avg_sentence_len"] = (df["word_count"] / df["sentence_count"].replace(0, np.nan)).fillna(0.0)
+
+    # ── topic / categorical columns (present in dual-stratified dataset) ───────
+    for col in ["issue_primary_topic", "company_primary_topic", "primary_topic"]:
+        if col in df.columns:
+            df[col] = df[col].fillna("Unknown").astype(str)
+    for col in df.columns:
+        if col.endswith("_prob") or col in ("issue_confidence", "company_confidence", "topic_confidence"):
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+    for col in ["Product", "Sub-product", "Issue", "Sub-issue", "State", "Tags", "Company"]:
         if col in df.columns:
             df[col] = df[col].fillna("Unknown").astype(str)
 
-    meta_available = [c for c in META_COLS if c in df.columns]
-    feature_cols = [TEXT_FEATURE] + [
-        c for c in ["primary_topic", "topic_confidence",
-                    "Product", "Sub-product", "Issue", "Sub-issue", "State", "Tags"]
-        if c in df.columns and c not in meta_available
-    ]
-
-    return df[list(dict.fromkeys(feature_cols + meta_available + ["label"]))]
+    return df
 
 
 # ── model loading ─────────────────────────────────────────────────────────────
@@ -139,43 +212,51 @@ def load_model(model_path: str):
 
 # ── feature importance ────────────────────────────────────────────────────────
 
-def extract_feature_importance(pipeline) -> pd.DataFrame:
-    """Works for XGBoost (feature_importances_) and calibrated SVM (coef_)."""
+def extract_feature_importance(pipeline, top_n: int = 200) -> pd.DataFrame:
+    """
+    Works for XGBoost (feature_importances_) and calibrated SVM (coef_).
+    Returns only the top_n features with nonzero importance.
+    Handles pipelines with an optional SelectFromModel selector step.
+    """
     steps = pipeline.named_steps
 
-    # Get feature names from the preprocessor (ColumnTransformer or TF-IDF)
     if "preprocessor" in steps:
-        feature_names = steps["preprocessor"].get_feature_names_out()
+        all_names = steps["preprocessor"].get_feature_names_out()
     elif "tfidf" in steps:
-        feature_names = steps["tfidf"].get_feature_names_out()
+        all_names = steps["tfidf"].get_feature_names_out()
     else:
         return pd.DataFrame(columns=["feature", "importance", "rank"])
+
+    # If a selector step exists, restrict names to selected features
+    if "selector" in steps:
+        mask = steps["selector"].get_support()
+        feature_names = all_names[mask]
+    else:
+        feature_names = all_names
 
     # XGBoost
     if "xgb" in steps:
         importances = steps["xgb"].feature_importances_
-        return (
-            pd.DataFrame({"feature": feature_names, "importance": importances})
-            .sort_values("importance", ascending=False)
-            .reset_index(drop=True)
-            .assign(rank=lambda d: range(1, len(d) + 1))
-        )
+        df = pd.DataFrame({"feature": feature_names, "importance": importances})
 
     # Calibrated SVM
-    if "svm" in steps or "model" in steps:
+    elif "svm" in steps or "model" in steps:
         svm_step = steps.get("svm") or steps.get("model")
         try:
             coef = svm_step.calibrated_classifiers_[0].estimator.coef_[0]
-            return (
-                pd.DataFrame({"feature": feature_names, "importance": coef})
-                .sort_values("importance", ascending=False)
-                .reset_index(drop=True)
-                .assign(rank=lambda d: range(1, len(d) + 1))
-            )
+            df = pd.DataFrame({"feature": feature_names, "importance": coef})
         except AttributeError:
-            pass
+            return pd.DataFrame(columns=["feature", "importance", "rank"])
+    else:
+        return pd.DataFrame(columns=["feature", "importance", "rank"])
 
-    return pd.DataFrame(columns=["feature", "importance", "rank"])
+    return (
+        df[df["importance"] > 0]
+        .sort_values("importance", ascending=False)
+        .head(top_n)
+        .reset_index(drop=True)
+        .assign(rank=lambda d: range(1, len(d) + 1))
+    )
 
 
 # ── metrics helpers ───────────────────────────────────────────────────────────
@@ -238,10 +319,10 @@ def save_outputs(
     print(f"  Saved roc_curve.csv         ({len(roc_df):,} points)")
 
     # ── 4. feature_importance.csv ─────────────────────────────────────────────
-    feat_df = extract_feature_importance(pipeline)
+    feat_df = extract_feature_importance(pipeline, top_n=200)
     if not feat_df.empty:
         feat_df.to_csv(os.path.join(output_dir, "feature_importance.csv"), index=False)
-        print(f"  Saved feature_importance.csv ({len(feat_df):,} features)")
+        print(f"  Saved feature_importance.csv (top {len(feat_df):,} features with nonzero importance)")
     else:
         print(f"  Skipped feature_importance.csv (unsupported model type)")
 
@@ -294,18 +375,16 @@ def main(args: argparse.Namespace) -> None:
     print(f"\nLabel split — relief: {n_relief:,} ({n_relief/n_total:.3%})  "
           f"no relief: {n_total - n_relief:,} ({(n_total - n_relief)/n_total:.3%})")
 
-    X = df.drop(columns=["label"])
-    y = df["label"]
+    df_sorted = df.sort_values("date", na_position="first").reset_index(drop=True)
+    n      = len(df_sorted)
+    n_test = int(n * args.test_size)
+    cutoff = df_sorted["date"].iloc[n - n_test]
 
-    # Re-split with the same parameters used at training time
-    _, X_test, _, y_test = train_test_split(
-        X, y,
-        test_size=args.test_size,
-        random_state=args.random_state,
-        stratify=y,
-    )
-    print(f"Test set: {len(X_test):,} rows  "
-          f"({int(y_test.sum()):,} relief / {int((y_test==0).sum()):,} no relief)")
+    X_test = df_sorted.drop(columns=["label", "date"]).iloc[n - n_test:]
+    y_test = df_sorted["label"].iloc[n - n_test:]
+    print(f"Chronological test set: {len(X_test):,} rows  "
+          f"(from {cutoff.date()} onwards)  "
+          f"relief: {int(y_test.sum()):,} / no relief: {int((y_test==0).sum()):,}")
 
     print("\nRunning predictions ...")
     y_prob = pipeline.predict_proba(X_test)[:, 1]
@@ -329,9 +408,7 @@ if __name__ == "__main__":
     parser.add_argument("--output_dir",   default=DEFAULT_OUTPUT,
                         help="Directory to write all output files")
     parser.add_argument("--test_size",    type=float, default=0.2,
-                        help="Test fraction — must match training split")
-    parser.add_argument("--random_state", type=int,   default=42,
-                        help="Random seed — must match training split")
+                        help="Fraction of most-recent rows used as test set (default 0.2)")
     parser.add_argument("--threshold",    type=float, default=None,
                         help="Override the saved threshold (default: use saved value)")
     main(parser.parse_args())
