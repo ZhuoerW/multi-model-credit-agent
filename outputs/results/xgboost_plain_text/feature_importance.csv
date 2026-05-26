@@ -1,0 +1,47 @@
+feature,importance,rank
+text_signals__fee,0.07377381,1
+text_signals__fees,0.06735418,2
+text_signals__bonus,0.06730168,3
+text_signals__bofa,0.047498286,4
+text_signals__boa,0.04157257,5
+text_signals__robinhood,0.039580967,6
+text_signals__claim,0.036116328,7
+text_signals__atm,0.03449569,8
+text_signals__charged,0.03358098,9
+text_signals__promotion,0.033379,10
+text_signals__cash app,0.032233767,11
+text_signals__credited,0.031145027,12
+text_signals__capital,0.027526533,13
+text_signals__restricted,0.020804802,14
+text_signals__privacy,0.020118155,15
+text_signals__santander,0.019521993,16
+text_signals__charges,0.019502262,17
+text_signals__refunded,0.019412288,18
+text_signals__cashapp,0.018804414,19
+text_signals__huntington,0.018475046,20
+text_signals__charging,0.018276114,21
+text_signals__credit report,0.016193753,22
+text_signals__charge,0.01605128,23
+text_signals__td,0.014894284,24
+text_signals__machine,0.014693068,25
+text_signals__immediately called,0.014512479,26
+text_signals__tax refund,0.014485624,27
+text_signals__refund,0.014467303,28
+text_signals__laws,0.014144353,29
+text_signals__days,0.013412211,30
+text_signals__credit karma,0.013078592,31
+text_signals__citibank,0.011775248,32
+text_signals__identity,0.011385231,33
+text_signals__called,0.010438486,34
+text_signals__citi,0.010344408,35
+text_signals__karma,0.010330208,36
+text_signals__returned,0.010264312,37
+text_signals__consumer,0.008640432,38
+text_signals__practices,0.008457835,39
+text_signals__card information,0.008448688,40
+text_signals__total,0.008360178,41
+text_signals__settled,0.007943828,42
+text_signals__bank america,0.007299865,43
+text_signals__findings,0.0072188363,44
+text_signals__similar,0.006762232,45
+text_signals__having sufficient,0.0059234025,46
